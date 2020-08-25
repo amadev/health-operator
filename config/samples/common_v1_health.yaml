@@ -1,0 +1,7 @@
+apiVersion: common.amadev.ru/v1
+kind: Health
+metadata:
+  name: health-sample
+spec:
+  # Add fields here
+  foo: bar

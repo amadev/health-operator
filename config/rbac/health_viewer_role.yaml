@@ -1,0 +1,20 @@
+# permissions for end users to view healths.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: health-viewer-role
+rules:
+- apiGroups:
+  - common.amadev.ru
+  resources:
+  - healths
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - common.amadev.ru
+  resources:
+  - healths/status
+  verbs:
+  - get

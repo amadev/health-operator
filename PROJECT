@@ -1,0 +1,11 @@
+domain: amadev.ru
+layout: go.kubebuilder.io/v2
+projectName: health-operator
+repo: github.com/amadev/health-operator
+resources:
+- group: common
+  kind: Health
+  version: v1
+version: 3-alpha
+plugins:
+  go.sdk.operatorframework.io/v2-alpha: {}
