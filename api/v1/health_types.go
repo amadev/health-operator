@@ -20,22 +20,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // HealthSpec defines the desired state of Health
 type HealthSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of Health. Edit Health_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
 }
+
+// type AppStatus struct {
+// 	Status     string `json:"status"`
+// 	Generation int32  `json:"generation"`
+// }
+
+// type Component struct {
+// 	Name map[string]AppStatus `json:"applications,omitempty"`
+// }
 
 // HealthStatus defines the observed state of Health
 type HealthStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	Applications map[string]string `json:"applications,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -20,6 +20,8 @@ import (
 	"context"
 
 	"github.com/go-logr/logr"
+	appsv1 "k8s.io/api/apps/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -36,18 +38,54 @@ type HealthReconciler struct {
 
 // +kubebuilder:rbac:groups=common.amadev.ru,resources=healths,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=common.amadev.ru,resources=healths/status,verbs=get;update;patch
+// +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps,resources=statefulsets,verbs=get;list;watch;create;update;patch;delete
+// +kubebuilder:rbac:groups=apps,resources=daemonsets,verbs=get;list;watch;create;update;patch;delete
 
 func (r *HealthReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	_ = context.Background()
-	_ = r.Log.WithValues("health", req.NamespacedName)
+	ctx := context.Background()
+	log := r.Log.WithValues("health", req.NamespacedName)
 
-	// your logic here
+	log.Info("Got reconcile request", "req", req)
+	health := &commonv1.Health{}
+	err := r.Get(ctx, req.NamespacedName, health)
+	if err != nil {
+		if errors.IsNotFound(err) {
+			// Request object not found, could have been deleted after reconcile request.
+			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
+			// Return and don't requeue
+			log.Info("Health resource not found. Ignoring since object must be deleted")
+			return ctrl.Result{}, nil
+		}
+		// Error reading the object - requeue the request.
+		log.Error(err, "Failed to get Health")
+		return ctrl.Result{}, err
+	}
+
+	// switch req.Kind {
+	// case "Deployment":
+	// 	obj := &appsv1.Deployment{}
+	// case "StatefulSet":
+	// 	obj := &appsv1.StatefulSet{}
+	// case "StatefulSet":
+	// 	obj := &appsv1.StatefulSet{}
+	// }
+
+	//status := &commonv1.AppStatus{"Success", 5}
+	health.Status.Applications = map[string]string{"nova-compute": "success"}
+	err = r.Status().Update(ctx, health)
+	if err != nil {
+		log.Error(err, "Failed to update Health status")
+		return ctrl.Result{}, err
+	}
 
 	return ctrl.Result{}, nil
 }
 
 func (r *HealthReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&commonv1.Health{}).
+		For(&appsv1.Deployment{}).
+		For(&appsv1.StatefulSet{}).
+		For(&appsv1.DaemonSet{}).
 		Complete(r)
 }
