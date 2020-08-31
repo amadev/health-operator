@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"strings"
 
 	commonv1 "github.com/amadev/health-operator/api/v1"
 )
@@ -73,13 +74,20 @@ func (r *HealthReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	app, app_ok := found.ObjectMeta.Labels["application"]
 	component, component_ok := found.ObjectMeta.Labels["component"]
-	name := fmt.Sprintf("%s-%s", app, component)
-	if app_ok == false || component_ok == false {
-		name = req.Name
+	alt_name := strings.Split(req.Name, "-")
+	log.Info("Identification", "app", app, "component", component, "alt_name", alt_name)
+	if app_ok == false {
+		app = alt_name[0]
 	}
-
-	//status := &commonv1.AppStatus{"Success", found.Generation}
-	patch := []byte(fmt.Sprintf(`{"status":{"Applications": {"%s": "success"}}}`, name))
+	if component_ok == false {
+		if len(alt_name) > 1 {
+			component = alt_name[1]
+		} else {
+			component = "default"
+		}
+	}
+	status := "success"
+	patch := []byte(fmt.Sprintf(`{"status":{"%s": {"%s": {"status": "%s", "generation": %d}}}}`, app, component, status, found.Generation))
 	err = r.Status().Patch(ctx, health, client.RawPatch(types.MergePatchType, patch))
 	if err != nil {
 		log.Error(err, "Failed to update Health status")

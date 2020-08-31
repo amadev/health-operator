@@ -24,18 +24,8 @@ import (
 type HealthSpec struct {
 }
 
-// type AppStatus struct {
-// 	Status     string `json:"status"`
-// 	Generation int32  `json:"generation"`
-// }
-
-// type Component struct {
-// 	Name map[string]AppStatus `json:"applications,omitempty"`
-// }
-
 // HealthStatus defines the observed state of Health
 type HealthStatus struct {
-	Applications map[string]string `json:"applications,omitempty"`
 }
 
 // +kubebuilder:object:root=true

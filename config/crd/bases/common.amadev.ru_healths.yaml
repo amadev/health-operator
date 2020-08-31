@@ -38,11 +38,6 @@ spec:
           type: object
         status:
           description: HealthStatus defines the observed state of Health
-          properties:
-            applications:
-              additionalProperties:
-                type: string
-              type: object
           type: object
       type: object
   version: v1
