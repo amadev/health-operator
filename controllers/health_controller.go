@@ -18,11 +18,12 @@ package controllers
 
 import (
 	"context"
-
+	"fmt"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -46,9 +47,10 @@ func (r *HealthReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("health", req.NamespacedName)
 
-	log.Info("Got reconcile request", "req", req)
+	log.Info("Got reconcile request")
+
 	health := &commonv1.Health{}
-	err := r.Get(ctx, req.NamespacedName, health)
+	err := r.Get(ctx, types.NamespacedName{Name: "health", Namespace: req.Namespace}, health)
 	if err != nil {
 		if errors.IsNotFound(err) {
 			// Request object not found, could have been deleted after reconcile request.
@@ -62,18 +64,23 @@ func (r *HealthReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	// switch req.Kind {
-	// case "Deployment":
-	// 	obj := &appsv1.Deployment{}
-	// case "StatefulSet":
-	// 	obj := &appsv1.StatefulSet{}
-	// case "StatefulSet":
-	// 	obj := &appsv1.StatefulSet{}
-	// }
+	found := &appsv1.Deployment{}
+	err = r.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, found)
+	if err != nil {
+		log.Error(err, "Failed to get Deployment")
+		return ctrl.Result{}, err
+	}
 
-	//status := &commonv1.AppStatus{"Success", 5}
-	health.Status.Applications = map[string]string{"nova-compute": "success"}
-	err = r.Status().Update(ctx, health)
+	app, app_ok := found.ObjectMeta.Labels["application"]
+	component, component_ok := found.ObjectMeta.Labels["component"]
+	name := fmt.Sprintf("%s-%s", app, component)
+	if app_ok == false || component_ok == false {
+		name = req.Name
+	}
+
+	//status := &commonv1.AppStatus{"Success", found.Generation}
+	patch := []byte(fmt.Sprintf(`{"status":{"Applications": {"%s": "success"}}}`, name))
+	err = r.Status().Patch(ctx, health, client.RawPatch(types.MergePatchType, patch))
 	if err != nil {
 		log.Error(err, "Failed to update Health status")
 		return ctrl.Result{}, err
@@ -85,7 +92,5 @@ func (r *HealthReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 func (r *HealthReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&appsv1.Deployment{}).
-		For(&appsv1.StatefulSet{}).
-		For(&appsv1.DaemonSet{}).
 		Complete(r)
 }
