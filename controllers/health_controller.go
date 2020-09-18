@@ -86,7 +86,25 @@ func (r *HealthReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 			component = "default"
 		}
 	}
-	status := "success"
+
+	available := false
+	progressing := false
+	for i := 0; i < len(found.Status.Conditions); i++ {
+		c := found.Status.Conditions[i]
+		if c.Status == "True" && c.Type == "Available" {
+			available = true
+		}
+		if c.Status == "True" && c.Type == "Progressing" && c.Reason == "NewReplicaSetAvailable" {
+			progressing = true
+		}
+	}
+	status := "notready"
+	if available && progressing {
+		status = "ready"
+	}
+
+	log.Info("Status", "available", available, "progressing", progressing, "status", status)
+
 	patch := []byte(fmt.Sprintf(`{"status":{"%s": {"%s": {"status": "%s", "generation": %d}}}}`, app, component, status, found.Generation))
 	err = r.Status().Patch(ctx, health, client.RawPatch(types.MergePatchType, patch))
 	if err != nil {
