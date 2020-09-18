@@ -1,0 +1,49 @@
+* Health Operator
+
+Health Operator watches for changes in deployments, statefulsets and
+daemonsets and create a summary status resource aka health CR.
+
+kubectl get health -o yaml -n $target_namespace
+
+#+BEGIN_SRC text
+- apiVersion: common.amadev.ru/v1
+  kind: Health
+  status:
+    nova:
+      metadata:
+        generation: 2
+        status: ready
+      os-api:
+        generation: 2
+        status: ready
+      scheduler:
+        generation: 2
+        status: ready
+    octavia:
+      api:
+        generation: 2
+        status: ready
+      housekeeping:
+        generation: 2
+        status: ready
+      worker:
+        generation: 2
+        status: ready
+#+END_SRC
+
+It watches for changes on a cluster level but update health CR on per
+namespace basis only if health CR is already present in the namespace.
+
+To determine application and component name, an `application' and
+`component` label used on k8s objects. If none of these found, Health
+Operator tries to parse application and component name from a k8s
+object name.
+
+Status of a component can be ready or notready.
+Health Operator never deletes any app statuses.
+
+** Tests
+
+kubectl apply -f config/samples/common_v1_health.yaml -n $target_namespace
+
+make install run ENABLE_WEBHOOKS=false
