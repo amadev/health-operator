@@ -28,7 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 
-	commonv1 "github.com/amadev/health-operator/api/v1"
+	commonv1alpha1 "github.com/amadev/health-operator/api/v1alpha1"
 )
 
 // HealthReconciler reconciles a Health object
@@ -50,7 +50,7 @@ func (r *HealthReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	log.Info("Got reconcile request")
 
-	health := &commonv1.Health{}
+	health := &commonv1alpha1.Health{}
 	err := r.Get(ctx, types.NamespacedName{Name: "health", Namespace: req.Namespace}, health)
 	if err != nil {
 		if errors.IsNotFound(err) {
