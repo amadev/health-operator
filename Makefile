@@ -23,6 +23,8 @@ else
 GOBIN=$(shell go env GOBIN)
 endif
 
+SHELL := /bin/bash
+
 all: manager
 
 # Run tests
