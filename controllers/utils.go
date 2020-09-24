@@ -17,14 +17,8 @@ limitations under the License.
 package controllers
 
 import (
-	"context"
 	"fmt"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/types"
-	ctrl "sigs.k8s.io/controller-runtime"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 	"strings"
 )
 
@@ -45,16 +39,6 @@ func getIdentity(meta metav1.ObjectMeta) (app, component string) {
 	return app, component
 }
 
-func updateHealth(r interface{}, health runtime.Object, app string, component string, status string, generation int64) (ctrl.Result, error) {
-
-	log := r.(HealthReconciler).Log
-	ctx := context.Background()
-	patch := []byte(fmt.Sprintf(`{"status":{"%s": {"%s": {"status": "%s", "generation": %d}}}}`, app, component, status, generation))
-	err := r.(HealthReconciler).Status().Patch(ctx, health, client.RawPatch(types.MergePatchType, patch))
-	if err != nil {
-		log.Error(err, "Failed to update Health status")
-		return ctrl.Result{}, err
-	}
-
-	return ctrl.Result{}, nil
+func getPatch(app string, component string, status string, generation int64) []byte {
+	return []byte(fmt.Sprintf(`{"status":{"%s": {"%s": {"status": "%s", "generation": %d}}}}`, app, component, status, generation))
 }

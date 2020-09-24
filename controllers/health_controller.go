@@ -35,6 +35,26 @@ type HealthReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+func (r *HealthReconciler) calculateStatus(obj *appsv1.Deployment) string {
+	available := false
+	progressing := false
+	for i := 0; i < len(obj.Status.Conditions); i++ {
+		c := obj.Status.Conditions[i]
+		if c.Status == "True" && c.Type == "Available" {
+			available = true
+		}
+		if c.Status == "True" && c.Type == "Progressing" && c.Reason == "NewReplicaSetAvailable" {
+			progressing = true
+		}
+	}
+	status := "notready"
+	if available && progressing {
+		status = "ready"
+	}
+	return status
+
+}
+
 // +kubebuilder:rbac:groups=common.amadev.ru,resources=healths,verbs=get;list;watch;create;update;patch;delete
 // +kubebuilder:rbac:groups=common.amadev.ru,resources=healths/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
@@ -44,7 +64,7 @@ type HealthReconciler struct {
 func (r *HealthReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
 	log := r.Log.WithValues("health", req.NamespacedName)
-
+	found := &appsv1.Deployment{}
 	log.Info("Got reconcile request")
 
 	health := &commonv1alpha1.Health{}
@@ -58,40 +78,37 @@ func (r *HealthReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 		return ctrl.Result{}, err
 	}
 
-	found := &appsv1.Deployment{}
 	err = r.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, found)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			log.Info("Deployment was deleted. Finalazer is not used. Skipping that case")
+			log.Info("Object was deleted. Finalazer is not used. Skipping that case")
 			return ctrl.Result{}, nil
 		}
 
-		log.Error(err, "Failed to get Deployment")
+		log.Error(err, "Failed to get an object")
 		return ctrl.Result{}, err
 	}
 
 	app, component := getIdentity(found.ObjectMeta)
 	log.Info("Identification", "app", app, "component", component)
 
-	available := false
-	progressing := false
-	for i := 0; i < len(found.Status.Conditions); i++ {
-		c := found.Status.Conditions[i]
-		if c.Status == "True" && c.Type == "Available" {
-			available = true
-		}
-		if c.Status == "True" && c.Type == "Progressing" && c.Reason == "NewReplicaSetAvailable" {
-			progressing = true
-		}
-	}
-	status := "notready"
-	if available && progressing {
-		status = "ready"
+	status := r.calculateStatus(found)
+
+	log.Info("Status", "status", status)
+
+	patch := getPatch(app, component, status, found.Generation)
+
+	err = r.Status().Patch(
+		ctx,
+		health,
+		client.RawPatch(types.MergePatchType, patch))
+
+	if err != nil {
+		log.Error(err, "Failed to update Health status")
+		return ctrl.Result{}, err
 	}
 
-	log.Info("Status", "available", available, "progressing", progressing, "status", status)
-
-	return updateHealth(r, health, app, component, status, found.Generation)
+	return ctrl.Result{}, nil
 }
 
 func (r *HealthReconciler) SetupWithManager(mgr ctrl.Manager) error {
