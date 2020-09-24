@@ -75,6 +75,14 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "Health")
 		os.Exit(1)
 	}
+	if err = (&controllers.StatefulSetHealthReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("StatefulSetHealth"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "StatefulSetHealth")
+		os.Exit(1)
+	}
 	// +kubebuilder:scaffold:builder
 
 	setupLog.Info("starting manager")
