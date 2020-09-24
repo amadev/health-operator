@@ -1,4 +1,4 @@
-apiVersion: common.amadev.ru/v1
+apiVersion: common.amadev.ru/v1alpha1
 kind: Health
 metadata:
   name: health

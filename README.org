@@ -44,6 +44,6 @@ Health Operator never deletes any app statuses.
 
 ** Tests
 
-kubectl apply -f config/samples/common_v1_health.yaml -n $target_namespace
+kubectl apply -f config/samples/common_v1alpha1_health.yaml -n $target_namespace
 
 make install run ENABLE_WEBHOOKS=false
