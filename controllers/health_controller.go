@@ -54,13 +54,9 @@ func (r *HealthReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	err := r.Get(ctx, types.NamespacedName{Name: "health", Namespace: req.Namespace}, health)
 	if err != nil {
 		if errors.IsNotFound(err) {
-			// Request object not found, could have been deleted after reconcile request.
-			// Owned objects are automatically garbage collected. For additional cleanup logic use finalizers.
-			// Return and don't requeue
-			log.Info("Health resource not found. Ignoring since object must be deleted")
+			log.Info("Health resource not found. Until health object is present in the namespace, summary will not be created")
 			return ctrl.Result{}, nil
 		}
-		// Error reading the object - requeue the request.
 		log.Error(err, "Failed to get Health")
 		return ctrl.Result{}, err
 	}
@@ -68,6 +64,11 @@ func (r *HealthReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	found := &appsv1.Deployment{}
 	err = r.Get(ctx, types.NamespacedName{Name: req.Name, Namespace: req.Namespace}, found)
 	if err != nil {
+		if errors.IsNotFound(err) {
+			log.Info("Deployment was deleted. Finalazer is not used. Skipping that case")
+			return ctrl.Result{}, nil
+		}
+
 		log.Error(err, "Failed to get Deployment")
 		return ctrl.Result{}, err
 	}
