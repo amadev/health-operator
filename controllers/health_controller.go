@@ -18,55 +18,21 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"github.com/go-logr/logr"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"strings"
 
 	commonv1alpha1 "github.com/amadev/health-operator/api/v1alpha1"
 )
 
-// HealthReconciler reconciles a Health object
 type HealthReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
-}
-
-func getIdentity(meta metav1.ObjectMeta) (app, component string) {
-	app, app_ok := meta.Labels["application"]
-	component, component_ok := meta.Labels["component"]
-	alt_name := strings.Split(meta.Name, "-")
-	if app_ok == false {
-		app = alt_name[0]
-	}
-	if component_ok == false {
-		if len(alt_name) > 1 {
-			component = alt_name[1]
-		} else {
-			component = "default"
-		}
-	}
-	return app, component
-}
-
-func (r *HealthReconciler) updateHealth(health runtime.Object, app string, component string, status string, generation int64) (ctrl.Result, error) {
-	log := r.Log
-	ctx := context.Background()
-	patch := []byte(fmt.Sprintf(`{"status":{"%s": {"%s": {"status": "%s", "generation": %d}}}}`, app, component, status, generation))
-	err := r.Status().Patch(ctx, health, client.RawPatch(types.MergePatchType, patch))
-	if err != nil {
-		log.Error(err, "Failed to update Health status")
-		return ctrl.Result{}, err
-	}
-
-	return ctrl.Result{}, nil
 }
 
 // +kubebuilder:rbac:groups=common.amadev.ru,resources=healths,verbs=get;list;watch;create;update;patch;delete
@@ -125,7 +91,7 @@ func (r *HealthReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 
 	log.Info("Status", "available", available, "progressing", progressing, "status", status)
 
-	return r.updateHealth(health, app, component, status, found.Generation)
+	return updateHealth(r, health, app, component, status, found.Generation)
 }
 
 func (r *HealthReconciler) SetupWithManager(mgr ctrl.Manager) error {
