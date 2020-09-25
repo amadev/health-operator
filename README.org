@@ -50,7 +50,9 @@ Operator never deletes any app statuses.
 kubectl apply -f https://raw.githubusercontent.com/amadev/health-operator/master/config/install_crd.yaml
 # create health resource for a desired namespace
 export target_namespace=openstack
-kubectl apply -f config/samples/common_v1alpha1_health.yaml -n $target_namespace
+kubectl apply -f https://raw.githubusercontent.com/amadev/health-operator/master/config/samples/common_v1alpha1_health.yaml -n $target_namespace
 # install operator
 kubectl apply -f https://raw.githubusercontent.com/amadev/health-operator/master/config/install.yaml
+# get summary health status
+kubectl -n $target_namespace get health -o yaml
 #+END_SRC
