@@ -37,9 +37,16 @@ type StatefulSetHealthReconciler struct {
 }
 
 func (r *StatefulSetHealthReconciler) calculateStatus(obj *appsv1.StatefulSet) string {
-	status := "not-implemented"
-	return status
+	status := "notready"
 
+	if obj.Status.Replicas == obj.Status.CurrentReplicas &&
+		obj.Status.Replicas == obj.Status.ReadyReplicas &&
+		obj.Status.Replicas == obj.Status.Replicas &&
+		obj.Status.Replicas == obj.Status.UpdatedReplicas {
+		status = "ready"
+	}
+
+	return status
 }
 
 // +kubebuilder:rbac:groups=common.amadev.ru,resources=statefulsethealths,verbs=get;list;watch;create;update;patch;delete
