@@ -36,7 +36,15 @@ type DaemonSetHealthReconciler struct {
 }
 
 func (r *DaemonSetHealthReconciler) calculateStatus(obj *appsv1.DaemonSet) string {
-	status := "notimplemented"
+	status := "notready"
+
+	if obj.Status.NumberReady == obj.Status.CurrentNumberScheduled &&
+		obj.Status.NumberReady == obj.Status.DesiredNumberScheduled &&
+		obj.Status.NumberReady == obj.Status.NumberAvailable &&
+		obj.Status.NumberReady == obj.Status.UpdatedNumberScheduled {
+		status = "ready"
+	}
+
 	return status
 }
 
