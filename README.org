@@ -1,7 +1,8 @@
 * Health Operator
 
-Health Operator watches for changes in deployments, statefulsets and
-daemonsets and create a summary status resource aka health CR.
+Health Operator watches for changes in Kubernetes Deployments,
+StatefulSets and DaemonSets and creates a summary status resource aka
+health CR.
 
 kubectl get health -o yaml -n $target_namespace
 
@@ -31,19 +32,25 @@ kubectl get health -o yaml -n $target_namespace
         status: ready
 #+END_SRC
 
-It watches for changes on a cluster level but update health CR on per
+It watches for changes on a cluster level but updates health CR on per
 namespace basis only if health CR is already present in the namespace.
 
-To determine application and component name, an `application' and
-`component` label used on k8s objects. If none of these found, Health
-Operator tries to parse application and component name from a k8s
-object name.
+To determine an application and a component name, an `application' and
+`component` label used on Kubernetes objects. If none of these found,
+Health Operator tries to parse application and component name from a
+k8s object name.
 
-Status of a component can be ready or notready.
-Health Operator never deletes any app statuses.
+The status of a component can be either "ready" or "notready".  Health
+Operator never deletes any app statuses.
 
-** Tests
+** Install
 
+#+BEGIN_SRC sh
+# create health custom resource definition
+kubectl apply -f https://raw.githubusercontent.com/amadev/health-operator/master/config/install_crd.yaml
+# create health resource for a desired namespace
+export target_namespace=openstack
 kubectl apply -f config/samples/common_v1alpha1_health.yaml -n $target_namespace
-
-make install run ENABLE_WEBHOOKS=false
+# install operator
+kubectl apply -f https://raw.githubusercontent.com/amadev/health-operator/master/config/install.yaml
+#+END_SRC
