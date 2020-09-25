@@ -29,29 +29,21 @@ import (
 	commonv1alpha1 "github.com/amadev/health-operator/api/v1alpha1"
 )
 
-type StatefulSetHealthReconciler struct {
+type DaemonSetHealthReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
 }
 
-func (r *StatefulSetHealthReconciler) calculateStatus(obj *appsv1.StatefulSet) string {
-	status := "notready"
-
-	if obj.Status.Replicas == obj.Status.CurrentReplicas &&
-		obj.Status.Replicas == obj.Status.ReadyReplicas &&
-		obj.Status.Replicas == obj.Status.Replicas &&
-		obj.Status.Replicas == obj.Status.UpdatedReplicas {
-		status = "ready"
-	}
-
+func (r *DaemonSetHealthReconciler) calculateStatus(obj *appsv1.DaemonSet) string {
+	status := "notimplemented"
 	return status
 }
 
-func (r *StatefulSetHealthReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *DaemonSetHealthReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
 	ctx := context.Background()
-	log := r.Log.WithValues("statufulsethealth", req.NamespacedName)
-	found := &appsv1.StatefulSet{}
+	log := r.Log.WithValues("daemonsethealth", req.NamespacedName)
+	found := &appsv1.DaemonSet{}
 	log.Info("Got reconcile request")
 
 	health := &commonv1alpha1.Health{}
@@ -98,8 +90,8 @@ func (r *StatefulSetHealthReconciler) Reconcile(req ctrl.Request) (ctrl.Result, 
 	return ctrl.Result{}, nil
 }
 
-func (r *StatefulSetHealthReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *DaemonSetHealthReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&appsv1.StatefulSet{}).
+		For(&appsv1.DaemonSet{}).
 		Complete(r)
 }
